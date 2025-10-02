@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+    <head th:replace="~{layouts/head :: head}"></head>
+    <body>
+        <header th:replace="~{layouts/header :: header}"></header>
+
+        <div class="container">
+            <form th:action="@{/pelicula}" th:object="${pelicula}" method="post" class="col-md-8 offset-md-2">
+                <h2 th:text="${titulo}" class="py-4"></h2>
+                <div class="row mb-3">
+                    <label for="nombre" class="col-sm-2 col-form-label">Nombre:</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="nombre" th:field="*{nombre}">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label for="fecha_estreno" class="col-sm-2 col-form-label">Fecha de Estreno:</label>
+                    <div class="col-sm-10">
+                        <input type="date" class="form-control" id="fecha_estreno" th:field="*{fechaEstreno}">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label for="generoId" class="col-sm-2 col-form-label">Género:</label>
+                    <div class="col-sm-10">
+                        <select class="form-select" th:field="*{generoId}">
+                            <option value="">Seleccione un género</option>
+                            <option th:each="genero : ${generos}" th:text="${genero.nombre}" th:value="${genero.id}">
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label for="protagonista" class="col-sm-2 col-form-label">Protagonista:</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="protagonista" th:field="*{protagonista}">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary float-end">Guardar</button>
+            </form>
+        </div>
+    </body>
+</html>
