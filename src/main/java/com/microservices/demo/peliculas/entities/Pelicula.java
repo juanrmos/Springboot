@@ -2,6 +2,7 @@ package com.microservices.demo.peliculas.entities;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -10,6 +11,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
@@ -28,15 +33,25 @@ public class Pelicula implements Serializable {
 
     @Column(name = "fecha_estreno")
     @Temporal(TemporalType.DATE)
-    @DateTimeFormat(pattern = "yyyy-MM-dd") 
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date fechaEstreno;
 
-    private String protagonista;
+    @OneToOne
+    @JoinColumn(name = "genero_id")  
+    private Genero genero;
+
+    @ManyToMany
+    @JoinTable(
+        name = "pelicula_actor",
+        joinColumns = @JoinColumn(name = "pelicula_id"),
+        inverseJoinColumns = @JoinColumn(name = "actor_id")
+    )
+    private List<Actor> protagonistas;
+
 
     public Long getId() {
         return id;
     }
-
     public void setId(Long id) {
         this.id = id;
     }
@@ -44,7 +59,6 @@ public class Pelicula implements Serializable {
     public String getNombre() {
         return nombre;
     }
-
     public void setNombre(String nombre) {
         this.nombre = nombre;
     }
@@ -52,27 +66,21 @@ public class Pelicula implements Serializable {
     public Date getFechaEstreno() {
         return fechaEstreno;
     }
-
     public void setFechaEstreno(Date fechaEstreno) {
         this.fechaEstreno = fechaEstreno;
     }
 
-    public String getProtagonista() {
-        return protagonista;
+    public Genero getGenero() {
+        return genero;
+    }
+    public void setGenero(Genero genero) {
+        this.genero = genero;
     }
 
-    public void setProtagonista(String protagonista) {
-        this.protagonista = protagonista;
+    public List<Actor> getProtagonistas() {
+        return protagonistas;
     }
-
-    @Column(name = "genero_id")
-    private Long generoId;
-
-    public Long getGeneroId() {
-    return generoId;
-    }
-
-    public void setGeneroId(Long generoId) {
-    this.generoId = generoId;
+    public void setProtagonistas(List<Actor> protagonistas) {
+        this.protagonistas = protagonistas;
     }
 }

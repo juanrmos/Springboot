@@ -13,16 +13,19 @@ import com.microservices.demo.peliculas.entities.Genero;
 import com.microservices.demo.peliculas.entities.Pelicula;
 import com.microservices.demo.peliculas.services.IGeneroService;
 import com.microservices.demo.peliculas.services.PeliculaService;
+import com.microservices.demo.peliculas.services.IActorService;
 
 @Controller
 public class PeliculaController {
 
     private final PeliculaService peliculaService;
     private final IGeneroService generoService;
+    private final IActorService actorService;
     
-    public PeliculaController(PeliculaService peliculaService, IGeneroService generoService) {
+    public PeliculaController(PeliculaService peliculaService, IGeneroService generoService, IActorService actorService) {
         this.peliculaService = peliculaService;
         this.generoService = generoService;
+        this.actorService = actorService;
     }
 
     @GetMapping("/pelicula")
@@ -31,9 +34,9 @@ public class PeliculaController {
         model.addAttribute("pelicula", pelicula);
         model.addAttribute("titulo", "Nueva Película");
         
-        // Cargar géneros para el select
         List<Genero> generos = generoService.findAll();
         model.addAttribute("generos", generos);
+        model.addAttribute("actores", actorService.findAll());
         
         return "pelicula";
     }
