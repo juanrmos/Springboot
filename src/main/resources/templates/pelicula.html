@@ -5,14 +5,39 @@
 <header th:replace="~{layouts/header :: header}"></header>
 
 <div class="container">
+    <!-- Mensajes de éxito o error globales -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+        <span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
     <form th:action="@{/pelicula}" th:object="${pelicula}" method="post" class="col-md-8 offset-md-2">
         <h2 th:text="${titulo}" class="py-4"></h2>
+
+        <!-- Campo oculto para el ID (importante para edición) -->
+        <input type="hidden" th:field="*{id}">
+        
+        <!-- Campo oculto para los IDs de actores -->
+        <input type="hidden" id="ids" name="idActores" value="">
 
         <!-- Nombre -->
         <div class="row mb-3">
             <label for="nombre" class="col-sm-2 col-form-label">Nombre:</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" id="nombre" th:field="*{nombre}">
+                <input type="text" 
+                       class="form-control" 
+                       th:classappend="${#fields.hasErrors('nombre')} ? 'is-invalid' : ''"
+                       id="nombre" 
+                       th:field="*{nombre}">
+                <!-- Mensaje de error específico del campo -->
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}">
+                    Error en nombre
+                </div>
             </div>
         </div>
 
@@ -20,7 +45,15 @@
         <div class="row mb-3">
             <label for="fechaEstreno" class="col-sm-2 col-form-label">Fecha de Estreno:</label>
             <div class="col-sm-10">
-                <input type="date" class="form-control" id="fechaEstreno" th:field="*{fechaEstreno}">
+                <input type="date" 
+                       class="form-control" 
+                       th:classappend="${#fields.hasErrors('fechaEstreno')} ? 'is-invalid' : ''"
+                       id="fechaEstreno" 
+                       th:field="*{fechaEstreno}">
+                <!-- Mensaje de error específico del campo -->
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('fechaEstreno')}" th:errors="*{fechaEstreno}">
+                    Error en fecha
+                </div>
             </div>
         </div>
 
@@ -28,14 +61,35 @@
         <div class="row mb-3">
             <label for="genero" class="col-sm-2 col-form-label">Género:</label>
             <div class="col-sm-10">
-                <!-- OJO: usamos genero.id porque Pelicula tiene Genero, no generoId -->
-                <select class="form-select" th:field="*{genero.id}">
+                <select class="form-select" 
+                        th:classappend="${#fields.hasErrors('genero')} ? 'is-invalid' : ''"
+                        th:field="*{genero.id}">
                     <option value="">Seleccione un género</option>
                     <option th:each="genero : ${generos}"
                             th:value="${genero.id}"
                             th:text="${genero.nombre}">
                     </option>
                 </select>
+                <!-- Mensaje de error específico del campo -->
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('genero')}" th:errors="*{genero}">
+                    Error en género
+                </div>
+            </div>
+        </div>
+
+        <!-- URL de Imagen -->
+        <div class="row mb-3">
+            <label for="imagenUrl" class="col-sm-2 col-form-label">URL de Imagen:</label>
+            <div class="col-sm-10">
+                <input type="url" 
+                       class="form-control" 
+                       th:classappend="${#fields.hasErrors('imagenUrl')} ? 'is-invalid' : ''"
+                       id="imagenUrl" 
+                       th:field="*{imagenUrl}" >
+                <!-- Mensaje de error específico del campo -->
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('imagenUrl')}" th:errors="*{imagenUrl}">
+                    Error en URL de imagen
+                </div>
             </div>
         </div>
 
@@ -43,39 +97,29 @@
         <div class="row mb-3">
             <label for="protagonistas" class="col-sm-2 col-form-label">Actores:</label>
             <div class="col-sm-10">
-                <!-- multiple permite elegir varios -->
-                <select class="form-select" id="protagonistas" name="idActores" multiple="multiple">
+                <select class="form-select" id="protagonistas" onchange="actorSelection(this)">
+                    <option value="">Seleccione un actor</option>
                     <option th:each="actor : ${actores}"
                             th:value="${actor.id}"
                             th:text="${actor.nombre}"
-                            th:data-url="${actor.urlImagen}">
+                            th:attr="data-url=${actor.urlImagen}">
                     </option>
                 </select>
-                <small class="form-text text-muted">Mantén Ctrl/Shift para seleccionar varios actores.</small>
+                <small class="form-text text-muted">Seleccione los actores uno por uno.</small>
             </div>
         </div>
 
-        <!-- Aquí mostramos imágenes de actores seleccionados -->
-        <div id="protagonists_container" class="row mt-3"></div>
+        <!-- Contenedor de actores seleccionados -->
+        <div id="protagonista_container" class="row mt-3 mb-3"></div>
 
-        <button type="submit" class="btn btn-primary float-end">Guardar</button>
+        <div class="row">
+            <div class="col-sm-10 offset-sm-2">
+                <button type="submit" class="btn btn-primary me-2">Guardar</button>
+                <a href="/home" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </div>
     </form>
 </div>
-
-<script>
-    // Previsualización de imágenes de actores seleccionados
-    document.getElementById("protagonistas").addEventListener("change", function () {
-        let contenedor = document.getElementById("protagonists_container");
-        contenedor.innerHTML = "";
-        Array.from(this.selectedOptions).forEach(opt => {
-            let img = document.createElement("img");
-            img.src = opt.getAttribute("data-url");
-            img.width = 80;
-            img.classList.add("me-2", "mb-2");
-            contenedor.appendChild(img);
-        });
-    });
-</script>
 
 </body>
 </html>

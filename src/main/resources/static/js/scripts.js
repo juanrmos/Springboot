@@ -1,39 +1,34 @@
-// section automata.xml(class) {
 function actorSelection(select) {
     let index = select.selectedIndex;
     let option = select.options[index];
     let id = option.value;
-    let number = option.text;
+    let nombre = option.text; // CORREGIDO: era 'number'
     let urlImagen = option.dataset.url;
 
-    option.disabled = "disabled";
-    option.disabledIndex = 0;
+    option.disabled = true; // CORREGIDO: sintaxis simplificada
+    select.selectedIndex = 0; // CORREGIDO: era 'disabledIndex'
 
-    agregarActor(id, nombre, urlImagen);
+    agregarActor(id, nombre, urlImagen); // CORREGIDO: ahora 'nombre' está definido
 
     let ids = $("#ids").val();
 
     if (ids == "") {
         $("#ids").val(id);
     } else {
-        $("#ids").val(ids + ";" + id);
+        $("#ids").val(ids + "," + id); // CORREGIDO: usar coma consistentemente
     }
 }
-// }
 
 function agregarActor(id, nombre, urlImagen) {
     let htmlString = `
         <div class="card col-md-3 m-2" style="width: 10rem">
-            <img src="{URL-IMAGEN}" class="card-img-top" alt="{NOMBRE}">
+            <img src="${urlImagen}" class="card-img-top" alt="${nombre}">
             <div class="card-body">
-                <p class="card-text">{NOMBRE}</p>
-                <button type="button" class="btn btn-danger" data-id="{ID}" onClick="eliminarActor(this); return false;">Eliminar</button>
+                <p class="card-text">${nombre}</p>
+                <button type="button" class="btn btn-danger" data-id="${id}" onClick="eliminarActor(this); return false;">Eliminar</button>
             </div>
         </div>`;
-    htmlString = htmlString.replace("{ID}", id);
-    htmlString = htmlString.replace("{NOMBRE}", nombre);
-    htmlString = htmlString.replace("{URL-IMAGEN}", urlImagen);
-
+    // CORREGIDO: usar template literals en lugar de replace
 
     $("#protagonista_container").append(htmlString);
 }
