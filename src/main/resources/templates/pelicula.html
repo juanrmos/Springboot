@@ -1,42 +1,81 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-    <head th:replace="~{layouts/head :: head}"></head>
-    <body>
-        <header th:replace="~{layouts/header :: header}"></header>
+<head th:replace="~{layouts/head :: head}"></head>
+<body>
+<header th:replace="~{layouts/header :: header}"></header>
 
-        <div class="container">
-            <form th:action="@{/pelicula}" th:object="${pelicula}" method="post" class="col-md-8 offset-md-2">
-                <h2 th:text="${titulo}" class="py-4"></h2>
-                <div class="row mb-3">
-                    <label for="nombre" class="col-sm-2 col-form-label">Nombre:</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="nombre" th:field="*{nombre}">
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <label for="fecha_estreno" class="col-sm-2 col-form-label">Fecha de Estreno:</label>
-                    <div class="col-sm-10">
-                        <input type="date" class="form-control" id="fecha_estreno" th:field="*{fechaEstreno}">
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <label for="generoId" class="col-sm-2 col-form-label">Género:</label>
-                    <div class="col-sm-10">
-                        <select class="form-select" th:field="*{generoId}">
-                            <option value="">Seleccione un género</option>
-                            <option th:each="genero : ${generos}" th:text="${genero.nombre}" th:value="${genero.id}">
-                            </option>
-                        </select>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <label for="protagonista" class="col-sm-2 col-form-label">Protagonista:</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="protagonista" th:field="*{protagonista}">
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary float-end">Guardar</button>
-            </form>
+<div class="container">
+    <form th:action="@{/pelicula}" th:object="${pelicula}" method="post" class="col-md-8 offset-md-2">
+        <h2 th:text="${titulo}" class="py-4"></h2>
+
+        <!-- Nombre -->
+        <div class="row mb-3">
+            <label for="nombre" class="col-sm-2 col-form-label">Nombre:</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="nombre" th:field="*{nombre}">
+            </div>
         </div>
-    </body>
+
+        <!-- Fecha Estreno -->
+        <div class="row mb-3">
+            <label for="fechaEstreno" class="col-sm-2 col-form-label">Fecha de Estreno:</label>
+            <div class="col-sm-10">
+                <input type="date" class="form-control" id="fechaEstreno" th:field="*{fechaEstreno}">
+            </div>
+        </div>
+
+        <!-- Género -->
+        <div class="row mb-3">
+            <label for="genero" class="col-sm-2 col-form-label">Género:</label>
+            <div class="col-sm-10">
+                <!-- OJO: usamos genero.id porque Pelicula tiene Genero, no generoId -->
+                <select class="form-select" th:field="*{genero.id}">
+                    <option value="">Seleccione un género</option>
+                    <option th:each="genero : ${generos}"
+                            th:value="${genero.id}"
+                            th:text="${genero.nombre}">
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Actores -->
+        <div class="row mb-3">
+            <label for="protagonistas" class="col-sm-2 col-form-label">Actores:</label>
+            <div class="col-sm-10">
+                <!-- multiple permite elegir varios -->
+                <select class="form-select" id="protagonistas" name="idActores" multiple="multiple">
+                    <option th:each="actor : ${actores}"
+                            th:value="${actor.id}"
+                            th:text="${actor.nombre}"
+                            th:data-url="${actor.urlImagen}">
+                    </option>
+                </select>
+                <small class="form-text text-muted">Mantén Ctrl/Shift para seleccionar varios actores.</small>
+            </div>
+        </div>
+
+        <!-- Aquí mostramos imágenes de actores seleccionados -->
+        <div id="protagonists_container" class="row mt-3"></div>
+
+        <button type="submit" class="btn btn-primary float-end">Guardar</button>
+    </form>
+</div>
+
+<script>
+    // Previsualización de imágenes de actores seleccionados
+    document.getElementById("protagonistas").addEventListener("change", function () {
+        let contenedor = document.getElementById("protagonists_container");
+        contenedor.innerHTML = "";
+        Array.from(this.selectedOptions).forEach(opt => {
+            let img = document.createElement("img");
+            img.src = opt.getAttribute("data-url");
+            img.width = 80;
+            img.classList.add("me-2", "mb-2");
+            contenedor.appendChild(img);
+        });
+    });
+</script>
+
+</body>
 </html>

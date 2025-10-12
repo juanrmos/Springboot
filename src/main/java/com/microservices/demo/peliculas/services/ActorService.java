@@ -21,7 +21,7 @@ public class ActorService implements IActorService {
     }
 
     @Override
-    public List<Actor> findByIdIn(List<Long> ids) {
+    public List<Actor> findAllById(List<Long> ids) {
         return (List<Actor>) actorRepository.findAllById(ids);
     }
     

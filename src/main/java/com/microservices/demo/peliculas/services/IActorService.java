@@ -6,6 +6,6 @@ import com.microservices.demo.peliculas.entities.Actor;
 
 public interface IActorService {
     public List<Actor> findAll();
-    public List<Actor> findByIdIn(List<Long> ids);
+    public List<Actor> findAllById(List<Long> ids);
     
 }

@@ -83,4 +83,16 @@ public class Pelicula implements Serializable {
     public void setProtagonistas(List<Actor> protagonistas) {
         this.protagonistas = protagonistas;
     }
+    
+    @Column(name = "imagen_url")
+    private String imagenUrl;
+
+    public String getImagenUrl() {
+        return imagenUrl;
+    }
+
+    public void setImagenUrl(String imagenUrl) {
+        this.imagenUrl = imagenUrl;
+    }
+
 }
