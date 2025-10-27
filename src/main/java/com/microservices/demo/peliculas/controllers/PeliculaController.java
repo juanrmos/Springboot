@@ -13,37 +13,47 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.microservices.demo.peliculas.entities.Genero;
 import com.microservices.demo.peliculas.entities.Pelicula;
 import com.microservices.demo.peliculas.services.IActorService;
+import com.microservices.demo.peliculas.services.IArchivoService;
 import com.microservices.demo.peliculas.services.IGeneroService;
 import com.microservices.demo.peliculas.services.PeliculaService;
 
 import jakarta.validation.Valid;
 
-
 @Controller
 public class PeliculaController {
-
 
     private final PeliculaService peliculaService;
     private final IGeneroService generoService;
     private final IActorService actorService;
+    private final IArchivoService archivoService;
     
-    public PeliculaController(PeliculaService peliculaService, IGeneroService generoService, IActorService actorService) {
+    public PeliculaController(PeliculaService peliculaService, IGeneroService generoService, 
+                            IActorService actorService, IArchivoService archivoService) {
         this.peliculaService = peliculaService;
         this.generoService = generoService;
         this.actorService = actorService;
-
+        this.archivoService = archivoService;
     }
 
     @GetMapping({"/", "/home", "/index"})
     public String home(Model model) {
         model.addAttribute("peliculas", peliculaService.findAll());
-        model.addAttribute("msj", "Catalago actualizado a 2025");
+        model.addAttribute("titulo", "Catálogo de Películas");
+        model.addAttribute("msj", "Catálogo actualizado a 2025");
         model.addAttribute("tipoMsj", "success");
-        return "home";  // Redirige directamente a pelicula.html
+        return "home";
+    }
+
+    @GetMapping("/listado")
+    public String listado(Model model) {
+        model.addAttribute("peliculas", peliculaService.findAll());
+        model.addAttribute("titulo", "Administrar Películas");
+        return "listado";
     }
 
     @GetMapping("/pelicula")
@@ -51,11 +61,8 @@ public class PeliculaController {
         Pelicula pelicula = new Pelicula();
         model.addAttribute("pelicula", pelicula);
         model.addAttribute("titulo", "Nueva Película");
-        
-        List<Genero> generos = generoService.findAll();
-        model.addAttribute("generos", generos);
+        model.addAttribute("generos", generoService.findAll());
         model.addAttribute("actores", actorService.findAll());
-        
         return "pelicula";
     }
     
@@ -63,23 +70,18 @@ public class PeliculaController {
     public String guardar(@Valid @ModelAttribute Pelicula pelicula,
                         BindingResult result,
                         @RequestParam(name="idActores", required = false) String idActores,
-                        Model model) {
+                        @RequestParam(name="file", required = false) MultipartFile file,
+                        Model model,
+                        RedirectAttributes flash) {
 
-        // Validar errores ANTES de procesar
         if (result.hasErrors()) {
             model.addAttribute("titulo", pelicula.getId() != null ? "Editar Película" : "Nueva Película");
             model.addAttribute("generos", generoService.findAll());
             model.addAttribute("actores", actorService.findAll());
-            
-            // Debug: Mostrar errores en consola
-            result.getAllErrors().forEach(error -> {
-                System.out.println("Error de validación: " + error.getDefaultMessage());
-            });
-            
             return "pelicula";
         }
 
-        // Procesar actores seleccionados
+        // Procesar actores
         if (idActores != null && !idActores.trim().isEmpty()) {
             try {
                 List<Long> ids = Arrays.stream(idActores.split(","))
@@ -94,44 +96,86 @@ public class PeliculaController {
                     pelicula.setProtagonistas(Collections.emptyList());
                 }
             } catch (NumberFormatException e) {
-                model.addAttribute("error", "Error al procesar los actores seleccionados");
-                model.addAttribute("titulo", pelicula.getId() != null ? "Editar Película" : "Nueva Película");
-                model.addAttribute("generos", generoService.findAll());
-                model.addAttribute("actores", actorService.findAll());
-                return "pelicula";
+                flash.addFlashAttribute("error", "Error al procesar los actores seleccionados");
+                return "redirect:/pelicula";
             }
         } else {
             pelicula.setProtagonistas(Collections.emptyList());
         }
 
-        // Guardar la película
-        try {
-            peliculaService.save(pelicula);
-        } catch (Exception e) {
-            model.addAttribute("error", "Error al guardar la película: " + e.getMessage());
-            model.addAttribute("titulo", pelicula.getId() != null ? "Editar Película" : "Nueva Película");
-            model.addAttribute("generos", generoService.findAll());
-            model.addAttribute("actores", actorService.findAll());
-            return "pelicula";
+        // Procesar imagen
+        if (file != null && !file.isEmpty()) {
+            try {
+                // Si está editando y tiene imagen anterior, eliminarla
+                if (pelicula.getId() != null) {
+                    Pelicula peliculaExistente = peliculaService.findById(pelicula.getId());
+                    if (peliculaExistente != null && peliculaExistente.getImagenUrl() != null) {
+                        archivoService.eliminar(peliculaExistente.getImagenUrl());
+                    }
+                }
+                
+                String nombreArchivo = archivoService.guardar(file);
+                pelicula.setImagenUrl(nombreArchivo);
+            } catch (Exception e) {
+                flash.addFlashAttribute("error", "Error al guardar la imagen: " + e.getMessage());
+                return "redirect:/pelicula";
+            }
+        } else {
+            // Si no se sube imagen y es nueva, asignar imagen por defecto
+            if (pelicula.getId() == null) {
+                pelicula.setImagenUrl("_default.jpg");
+            } else {
+                // Si es edición, mantener la imagen existente
+                Pelicula peliculaExistente = peliculaService.findById(pelicula.getId());
+                if (peliculaExistente != null) {
+                    pelicula.setImagenUrl(peliculaExistente.getImagenUrl());
+                }
+            }
         }
 
-        return "redirect:/pelicula";
+        try {
+            peliculaService.save(pelicula);
+            flash.addFlashAttribute("success", pelicula.getId() != null ? 
+                "Película actualizada correctamente" : "Película guardada correctamente");
+        } catch (Exception e) {
+            flash.addFlashAttribute("error", "Error al guardar la película: " + e.getMessage());
+            return "redirect:/pelicula";
+        }
+
+        return "redirect:/listado";
     }
     
     @GetMapping("/pelicula/{id}")
     public String editar(@PathVariable(name = "id") Long id, Model model) {
         Pelicula pelicula = peliculaService.findById(id);
         if (pelicula == null) {
-            return "redirect:/home";
+            return "redirect:/listado";
         }
         
         model.addAttribute("pelicula", pelicula);
         model.addAttribute("titulo", "Editar Película");
-        
-        List<Genero> generos = generoService.findAll();
-        model.addAttribute("generos", generos);
+        model.addAttribute("generos", generoService.findAll());
         model.addAttribute("actores", actorService.findAll());
         
         return "pelicula";
+    }
+
+    @GetMapping("/pelicula/eliminar/{id}")
+    public String eliminar(@PathVariable(name = "id") Long id, RedirectAttributes flash) {
+        Pelicula pelicula = peliculaService.findById(id);
+        
+        if (pelicula != null) {
+            // Eliminar imagen si no es la por defecto
+            if (pelicula.getImagenUrl() != null && !pelicula.getImagenUrl().equals("_default.jpg")) {
+                archivoService.eliminar(pelicula.getImagenUrl());
+            }
+            
+            peliculaService.delete(id);
+            flash.addFlashAttribute("success", "Película eliminada correctamente");
+        } else {
+            flash.addFlashAttribute("error", "La película no existe");
+        }
+        
+        return "redirect:/listado";
     }
 }

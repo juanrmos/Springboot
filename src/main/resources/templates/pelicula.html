@@ -16,14 +16,21 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 
-    <form th:action="@{/pelicula}" th:object="${pelicula}" method="post" class="col-md-8 offset-md-2">
-        <h2 th:text="${titulo}" class="py-4"></h2>
+    <form th:action="@{/pelicula}" 
+          th:object="${pelicula}" 
+          method="post" 
+          enctype="multipart/form-data"
+          class="col-md-8 offset-md-2">
+        
+        <h2 th:text="${titulo}" class="py-4">Nueva Película</h2>
 
-        <!-- Campo oculto para el ID (importante para edición) -->
+        <!-- Campo oculto para el ID -->
         <input type="hidden" th:field="*{id}">
         
         <!-- Campo oculto para los IDs de actores -->
-        <input type="hidden" id="ids" name="idActores" value="">
+        <input type="hidden" id="ids" name="idActores" 
+               th:value="${pelicula.protagonistas != null ? 
+                         #strings.arrayJoin(pelicula.protagonistas.![id].toArray(), ',') : ''}">
 
         <!-- Nombre -->
         <div class="row mb-3">
@@ -33,8 +40,8 @@
                        class="form-control" 
                        th:classappend="${#fields.hasErrors('nombre')} ? 'is-invalid' : ''"
                        id="nombre" 
-                       th:field="*{nombre}">
-                <!-- Mensaje de error específico del campo -->
+                       th:field="*{nombre}"
+                       placeholder="Ingrese el nombre de la película">
                 <div class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}">
                     Error en nombre
                 </div>
@@ -50,7 +57,6 @@
                        th:classappend="${#fields.hasErrors('fechaEstreno')} ? 'is-invalid' : ''"
                        id="fechaEstreno" 
                        th:field="*{fechaEstreno}">
-                <!-- Mensaje de error específico del campo -->
                 <div class="invalid-feedback" th:if="${#fields.hasErrors('fechaEstreno')}" th:errors="*{fechaEstreno}">
                     Error en fecha
                 </div>
@@ -70,25 +76,45 @@
                             th:text="${genero.nombre}">
                     </option>
                 </select>
-                <!-- Mensaje de error específico del campo -->
                 <div class="invalid-feedback" th:if="${#fields.hasErrors('genero')}" th:errors="*{genero}">
                     Error en género
                 </div>
             </div>
         </div>
 
-        <!-- URL de Imagen -->
-        <div class="row mb-3">
-            <label for="imagenUrl" class="col-sm-2 col-form-label">URL de Imagen:</label>
+        <!-- Imagen Actual (solo al editar) -->
+        <div class="row mb-3" th:if="${pelicula.id != null and pelicula.imagenUrl != null}">
+            <label class="col-sm-2 col-form-label">Imagen Actual:</label>
             <div class="col-sm-10">
-                <input type="url" 
+                <img th:src="@{'/uploads/' + ${pelicula.imagenUrl}}" 
+                     alt="Imagen actual"
+                     style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 10px;"
+                     onerror="this.src='/img/movie.png'">
+            </div>
+        </div>
+
+        <!-- Cargar Nueva Imagen -->
+        <div class="row mb-3">
+            <label for="file" class="col-sm-2 col-form-label">
+                <span th:if="${pelicula.id == null}">Imagen:</span>
+                <span th:if="${pelicula.id != null}">Nueva Imagen:</span>
+            </label>
+            <div class="col-sm-10">
+                <input type="file" 
                        class="form-control" 
-                       th:classappend="${#fields.hasErrors('imagenUrl')} ? 'is-invalid' : ''"
-                       id="imagenUrl" 
-                       th:field="*{imagenUrl}" >
-                <!-- Mensaje de error específico del campo -->
-                <div class="invalid-feedback" th:if="${#fields.hasErrors('imagenUrl')}" th:errors="*{imagenUrl}">
-                    Error en URL de imagen
+                       id="file" 
+                       name="file"
+                       accept="image/*"
+                       onchange="previewImage(event)">
+                <small class="form-text text-muted">
+                    Formatos aceptados: JPG, PNG, GIF (máximo 10MB). 
+                    <span th:if="${pelicula.id == null}">Si no selecciona una imagen, se usará la imagen por defecto.</span>
+                    <span th:if="${pelicula.id != null}">Si no selecciona una imagen, se mantendrá la actual.</span>
+                </small>
+                <!-- Vista previa de la imagen -->
+                <div id="preview-container" class="mt-2" style="display: none;">
+                    <img id="preview-image" src="" alt="Vista previa" 
+                         style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 10px;">
                 </div>
             </div>
         </div>
@@ -110,16 +136,63 @@
         </div>
 
         <!-- Contenedor de actores seleccionados -->
-        <div id="protagonista_container" class="row mt-3 mb-3"></div>
+        <div id="protagonista_container" class="row mt-3 mb-3">
+            <!-- Actores existentes (al editar) -->
+            <div th:each="actor : ${pelicula.protagonistas}" 
+                 class="card col-md-3 m-2" 
+                 style="width: 10rem">
+                <img th:src="${actor.urlImagen}" 
+                     class="card-img-top" 
+                     th:alt="${actor.nombre}"
+                     onerror="this.src='/img/movie.png'">
+                <div class="card-body">
+                    <p class="card-text" th:text="${actor.nombre}">Actor</p>
+                    <button type="button" 
+                            class="btn btn-danger btn-sm" 
+                            th:attr="data-id=${actor.id}" 
+                            onclick="eliminarActor(this); return false;">
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <div class="row">
             <div class="col-sm-10 offset-sm-2">
                 <button type="submit" class="btn btn-primary me-2">Guardar</button>
-                <a href="/home" class="btn btn-secondary">Cancelar</a>
+                <a href="/listado" class="btn btn-secondary">Cancelar</a>
             </div>
         </div>
     </form>
 </div>
+
+<script>
+// Función para previsualizar la imagen antes de subirla
+function previewImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('preview-image');
+            const container = document.getElementById('preview-container');
+            preview.src = e.target.result;
+            container.style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+    }
+}
+
+// Deshabilitar actores que ya están seleccionados al cargar la página
+window.addEventListener('DOMContentLoaded', function() {
+    const idsSeleccionados = document.getElementById('ids').value.split(',').filter(id => id !== '');
+    idsSeleccionados.forEach(id => {
+        const option = document.querySelector(`#protagonistas option[value="${id}"]`);
+        if (option) {
+            option.disabled = true;
+        }
+    });
+});
+</script>
 
 </body>
 </html>

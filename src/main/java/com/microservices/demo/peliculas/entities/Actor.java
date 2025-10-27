@@ -10,15 +10,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-
-@Table (name="actores")
-
+@Table(name="actores")
 public class Actor implements Serializable {
     
     private static final long serialVersionUID = -5993984638673000666L; 
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;  // Cambiado de long a Long
+    
     private String nombre;
     
     @Column(name="url_imagen")
@@ -32,12 +32,11 @@ public class Actor implements Serializable {
         this.urlImagen = urlImagen;
     }
 
-
-    public long getId() {
+    public Long getId() {  // Cambiado de long a Long
         return this.id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {  // Cambiado de long a Long
         this.id = id;
     }
 
@@ -48,5 +47,4 @@ public class Actor implements Serializable {
     public void setNombre(String nombre) {
         this.nombre = nombre;
     }
-
 }

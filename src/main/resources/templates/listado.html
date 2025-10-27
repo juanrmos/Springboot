@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="layouts/head :: head"></head>
+
+<body>
+    <header th:replace="layouts/header :: header"></header>
+    
+    <div class="container mt-4">
+        <h1 th:text="${titulo}">Administrar Películas</h1>
+
+        <!-- Mensajes de éxito/error -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+            <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="mb-3">
+            <a href="/pelicula" class="btn btn-success">Nueva Película</a>
+            <a href="/home" class="btn btn-secondary">Volver al Catálogo</a>
+        </div>
+
+        <div class="table-responsive mt-4">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Imagen</th>
+                        <th>Nombre</th>
+                        <th>Género</th>
+                        <th>Fecha Estreno</th>
+                        <th>Protagonistas</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="pelicula : ${peliculas}">
+                        <td>
+                            <img th:if="${pelicula.imagenUrl != null}" 
+                                 th:src="@{'/uploads/' + ${pelicula.imagenUrl}}" 
+                                 alt="Imagen película"
+                                 style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;"
+                                 onerror="this.src='/img/movie.png'">
+                            <img th:unless="${pelicula.imagenUrl != null}" 
+                                 src="/img/movie.png" 
+                                 alt="Sin imagen"
+                                 style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
+                        </td>
+                        <td th:text="${pelicula.nombre}">Nombre</td>
+                        <td th:text="${pelicula.genero?.nombre}">Género</td>
+                        <td th:text="${#dates.format(pelicula.fechaEstreno, 'dd/MM/yyyy')}">Fecha</td>
+                        <td>
+                            <div th:if="${pelicula.protagonistas != null and !pelicula.protagonistas.empty}">
+                                <span th:each="protagonista, iterStat : ${pelicula.protagonistas}">
+                                    <span th:text="${protagonista.nombre}">Actor</span>
+                                    <span th:if="${!iterStat.last}">, </span>
+                                </span>
+                            </div>
+                            <small class="text-muted" th:if="${pelicula.protagonistas == null or pelicula.protagonistas.empty}">
+                                Sin protagonistas
+                            </small>
+                        </td>
+                        <td>
+                            <a th:href="@{'/pelicula/' + ${pelicula.id}}" class="btn btn-sm btn-primary me-1">
+                                Editar
+                            </a>
+                            <a th:href="@{'/pelicula/eliminar/' + ${pelicula.id}}" 
+                               class="btn btn-sm btn-danger"
+                               onclick="return confirm('¿Está seguro de eliminar esta película?');">
+                                Eliminar
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${peliculas == null or peliculas.empty}">
+                        <td colspan="6" class="text-center">No hay películas registradas</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
