@@ -7,64 +7,81 @@
     <header th:replace="layouts/header :: header"></header>
     
     <div class="container mt-4">
-        <h1 th:text="${titulo != null ? titulo : 'Catálogo de Películas'}"></h1>
+        <h1 th:text="${titulo != null ? titulo : 'Filtrar por Año'}"></h1>
 
-        <!-- NUEVO: Formulario de búsqueda -->
+        <!-- Formulario de filtro por año -->
         <div class="card mb-4 mt-4">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header bg-info text-white">
                 <h5 class="mb-0">
-                    <i class="bi bi-search"></i> Buscar Películas
+                    <i class="bi bi-calendar-range"></i> Filtrar Películas por Año de Estreno
                 </h5>
             </div>
             <div class="card-body">
-                <form action="/buscar" method="get" class="row g-3">
-                    <div class="col-md-4">
-                        <label for="nombre" class="form-label">Nombre:</label>
-                        <input type="text" 
-                               class="form-control" 
-                               id="nombre" 
-                               name="nombre"
-                               th:value="${nombreBusqueda}"
-                               placeholder="Buscar por nombre...">
-                    </div>
-                    
-                    <div class="col-md-3">
-                        <label for="generoId" class="form-label">Género:</label>
-                        <select class="form-select" id="generoId" name="generoId">
-                            <option value="">Todos los géneros</option>
-                            <option th:each="genero : ${generos}"
-                                    th:value="${genero.id}"
-                                    th:text="${genero.nombre}"
-                                    th:selected="${generoIdBusqueda != null && generoIdBusqueda == genero.id}">
-                            </option>
-                        </select>
-                    </div>
-                    
-                    <div class="col-md-3">
-                        <label for="actorId" class="form-label">Actor:</label>
-                        <select class="form-select" id="actorId" name="actorId">
-                            <option value="">Todos los actores</option>
-                            <option th:each="actor : ${actores}"
-                                    th:value="${actor.id}"
-                                    th:text="${actor.nombre}"
-                                    th:selected="${actorIdBusqueda != null && actorIdBusqueda == actor.id}">
-                            </option>
-                        </select>
-                    </div>
-                    
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-search"></i> Buscar
-                        </button>
-                    </div>
-                </form>
+                <!-- Filtro por año específico -->
+                <div class="mb-4">
+                    <h6 class="text-primary">Buscar por año específico:</h6>
+                    <form action="/filtrar-por-ano" method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="year" class="form-label">Año:</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="year" 
+                                   name="year"
+                                   th:value="${yearFiltro}"
+                                   placeholder="Ej: 2024"
+                                   min="1900"
+                                   max="2100">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-info w-100">
+                                <i class="bi bi-funnel"></i> Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <hr>
+
+                <!-- Filtro por rango de años -->
+                <div class="mb-3">
+                    <h6 class="text-primary">Buscar por rango de años:</h6>
+                    <form action="/filtrar-por-ano" method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="startYear" class="form-label">Desde el año:</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="startYear" 
+                                   name="startYear"
+                                   th:value="${startYearFiltro}"
+                                   placeholder="Ej: 2020"
+                                   min="1900"
+                                   max="2100">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="endYear" class="form-label">Hasta el año:</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="endYear" 
+                                   name="endYear"
+                                   th:value="${endYearFiltro}"
+                                   placeholder="Ej: 2024"
+                                   min="1900"
+                                   max="2100">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-info w-100">
+                                <i class="bi bi-funnel"></i> Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
                 
-                <div class="mt-2">
+                <div class="mt-3">
                     <a href="/home" class="btn btn-secondary btn-sm">
-                        <i class="bi bi-arrow-counterclockwise"></i> Limpiar búsqueda
+                        <i class="bi bi-house"></i> Volver al catálogo
                     </a>
-                    <a href="/filtrar-por-ano" class="btn btn-info btn-sm ms-2">
-                        <i class="bi bi-calendar"></i> Filtrar por año
+                    <a href="/filtrar-por-ano" class="btn btn-warning btn-sm ms-2">
+                        <i class="bi bi-arrow-counterclockwise"></i> Limpiar filtros
                     </a>
                 </div>
             </div>
@@ -76,7 +93,7 @@
             <div th:if="${peliculas == null or peliculas.empty}" class="col-12">
                 <div class="alert alert-warning" role="alert">
                     <i class="bi bi-exclamation-triangle"></i> 
-                    No se encontraron películas con los criterios de búsqueda seleccionados.
+                    No se encontraron películas para los criterios seleccionados.
                 </div>
             </div>
             
@@ -102,9 +119,14 @@
                             <span class="badge bg-primary" th:text="${pelicula.genero?.nombre}"></span>
                         </p>
                         <p class="card-text">
-                            <small class="text-muted">
+                            <strong class="text-info">
                                 <i class="bi bi-calendar-event"></i> 
-                                Estreno: <span th:text="${#dates.format(pelicula.fechaEstreno, 'dd/MM/yyyy')}"></span>
+                                Año: <span th:text="${#dates.year(pelicula.fechaEstreno)}"></span>
+                            </strong>
+                        </p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Fecha completa: <span th:text="${#dates.format(pelicula.fechaEstreno, 'dd/MM/yyyy')}"></span>
                             </small>
                         </p>
                         

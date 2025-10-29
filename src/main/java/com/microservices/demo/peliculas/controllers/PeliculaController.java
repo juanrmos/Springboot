@@ -46,7 +46,96 @@ public class PeliculaController {
         model.addAttribute("titulo", "Catálogo de Películas");
         model.addAttribute("msj", "Catálogo actualizado a 2025");
         model.addAttribute("tipoMsj", "success");
+        model.addAttribute("generos", generoService.findAll());
+        model.addAttribute("actores", actorService.findAll());
         return "home";
+    }
+
+    // NUEVA FUNCIONALIDAD: Búsqueda de películas
+    @GetMapping("/buscar")
+    public String buscar(
+            @RequestParam(name = "nombre", required = false) String nombre,
+            @RequestParam(name = "generoId", required = false) Long generoId,
+            @RequestParam(name = "actorId", required = false) Long actorId,
+            Model model) {
+        
+        List<Pelicula> peliculas;
+        
+        // Si no hay parámetros de búsqueda, mostrar todas
+        if ((nombre == null || nombre.trim().isEmpty()) && generoId == null && actorId == null) {
+            peliculas = peliculaService.findAll();
+            model.addAttribute("msj", "Mostrando todas las películas");
+        } else {
+            peliculas = peliculaService.searchPeliculas(nombre, generoId, actorId);
+            
+            // Construir mensaje de búsqueda
+            StringBuilder mensaje = new StringBuilder("Resultados de búsqueda");
+            if (nombre != null && !nombre.trim().isEmpty()) {
+                mensaje.append(" - Nombre: '").append(nombre).append("'");
+            }
+            if (generoId != null) {
+                mensaje.append(" - Género seleccionado");
+            }
+            if (actorId != null) {
+                mensaje.append(" - Actor seleccionado");
+            }
+            
+            model.addAttribute("msj", mensaje.toString() + " (" + peliculas.size() + " resultados)");
+        }
+        
+        model.addAttribute("peliculas", peliculas);
+        model.addAttribute("titulo", "Búsqueda de Películas");
+        model.addAttribute("tipoMsj", "info");
+        model.addAttribute("generos", generoService.findAll());
+        model.addAttribute("actores", actorService.findAll());
+        
+        // Mantener valores de búsqueda en el formulario
+        model.addAttribute("nombreBusqueda", nombre);
+        model.addAttribute("generoIdBusqueda", generoId);
+        model.addAttribute("actorIdBusqueda", actorId);
+        
+        return "home";
+    }
+
+    // NUEVA FUNCIONALIDAD: Filtro por año
+    @GetMapping("/filtrar-por-ano")
+    public String filtrarPorAno(
+            @RequestParam(name = "year", required = false) Integer year,
+            @RequestParam(name = "startYear", required = false) Integer startYear,
+            @RequestParam(name = "endYear", required = false) Integer endYear,
+            Model model) {
+        
+        List<Pelicula> peliculas;
+        String mensaje;
+        
+        if (year != null) {
+            // Filtrar por un año específico
+            peliculas = peliculaService.findByYear(year);
+            mensaje = "Películas estrenadas en " + year + " (" + peliculas.size() + " resultados)";
+        } else if (startYear != null && endYear != null) {
+            // Filtrar por rango de años
+            peliculas = peliculaService.findByYearRange(startYear, endYear);
+            mensaje = "Películas estrenadas entre " + startYear + " y " + endYear + 
+                     " (" + peliculas.size() + " resultados)";
+        } else {
+            // Sin filtro, mostrar todas
+            peliculas = peliculaService.findAll();
+            mensaje = "Mostrando todas las películas";
+        }
+        
+        model.addAttribute("peliculas", peliculas);
+        model.addAttribute("titulo", "Películas por Año");
+        model.addAttribute("msj", mensaje);
+        model.addAttribute("tipoMsj", "info");
+        model.addAttribute("generos", generoService.findAll());
+        model.addAttribute("actores", actorService.findAll());
+        
+        // Mantener valores del filtro
+        model.addAttribute("yearFiltro", year);
+        model.addAttribute("startYearFiltro", startYear);
+        model.addAttribute("endYearFiltro", endYear);
+        
+        return "filtro-ano";
     }
 
     @GetMapping("/listado")
